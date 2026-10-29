@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>One Sheet Wonder · Sheet generator</title>
+<style>
+@font-face { font-family: "Bungee"; src: url("/fonts/Bungee-Regular.ttf") format("truetype"); font-display: swap; }
+@font-face { font-family: "Barlow Condensed"; src: url("/fonts/BarlowCondensed-Medium.ttf") format("truetype"); font-weight: 500; font-display: swap; }
+@font-face { font-family: "Barlow Condensed"; src: url("/fonts/BarlowCondensed-SemiBold.ttf") format("truetype"); font-weight: 600; font-display: swap; }
+@font-face { font-family: "Barlow Condensed"; src: url("/fonts/BarlowCondensed-Bold.ttf") format("truetype"); font-weight: 700; font-display: swap; }
+
+:root {
+  --ink: #15142B; --ink-2: #2E2D45; --muted: #6F6E86; --grid: #E4E3EC; --line: #D6D5E0;
+  --paper: #FFFFFF; --violet: #6D28D9; --violet-bg: #F5F3FF; --red: #B91C1C; --red-bg: #FEF2F2;
+  --gold: #A16207; --gold-bg: #FEF3C7;
+  --display: "Bungee", Impact, sans-serif; --body: "Barlow Condensed", "Arial Narrow", Arial, sans-serif;
+}
+* { box-sizing: border-box; }
+html { background: var(--paper); }
+body {
+  margin: 0; color: var(--ink); font-family: var(--body); font-weight: 500; font-size: 18px; line-height: 1.4;
+  background-color: var(--paper);
+  background-image: linear-gradient(to right, var(--grid) 1px, transparent 1px), linear-gradient(to bottom, var(--grid) 1px, transparent 1px);
+  background-size: 34px 34px; background-position: -1px -1px;
+  min-height: 100vh;
+}
+.wrap { max-width: 1240px; margin: 0 auto; padding: 40px 32px 56px; display: grid; grid-template-columns: minmax(320px, 400px) 1fr; gap: 40px; align-items: start; }
+
+/* ---- the generator column ------------------------------------------------------------------------------- */
+.panel { background: var(--paper); border: 3px solid var(--ink); border-radius: 12px; padding: 26px 26px 28px; }
+h1 { font-family: var(--display); font-weight: 400; font-size: clamp(30px, 8.5vw, 40px); line-height: 0.95; margin: 0 0 6px; letter-spacing: 0.5px; }
+.rules-link { margin: -14px 0 22px; font-weight: 600; color: var(--ink-2); }
+.rules-link a { color: var(--violet); font-weight: 700; text-decoration-thickness: 2px; text-underline-offset: 3px; }
+.rules-link a:focus-visible { outline: 3px solid var(--violet); outline-offset: 2px; border-radius: 3px; }
+.lede { margin: 0 0 22px; color: var(--ink-2); font-weight: 600; max-width: 32ch; }
+
+.code { margin: 0 0 22px; padding: 14px 0 10px; border-top: 1.5px solid var(--ink); border-bottom: 1.5px solid var(--ink); }
+.code-digits { font-family: var(--display); font-size: clamp(20px, 6.8vw, 31px); line-height: 1; letter-spacing: 1px; white-space: nowrap; display: flex; gap: 2px; }
+.code-digits .seg { padding: 2px 0; }
+.code-digits .dash { color: var(--line); padding: 0 1px; }
+.code-digits .seed { color: var(--ink); }
+.code-digits .pending { color: var(--muted); }
+.code-key { display: flex; flex-wrap: wrap; gap: 2px 14px; margin-top: 8px; font-size: 14px; font-weight: 600; color: var(--muted); }
+
+label, .field-label { display: block; font-weight: 700; font-size: 17px; margin: 0 0 6px; }
+.field { margin: 0 0 18px; }
+.hint { margin: 6px 0 0; font-size: 15px; color: var(--muted); font-weight: 500; }
+input[type="text"] {
+  width: 100%; font-family: var(--display); font-size: 22px; letter-spacing: 1px; color: var(--ink);
+  padding: 10px 12px; border: 2px solid var(--ink); border-radius: 8px; background: var(--paper);
+}
+input[type="text"]::placeholder { font-family: var(--body); font-weight: 600; font-size: 18px; letter-spacing: 0; color: var(--muted); }
+input[aria-invalid="true"] { border-color: var(--red); background: var(--red-bg); }
+
+.seg-group { display: grid; grid-template-columns: repeat(3, 1fr); border: 2px solid var(--ink); border-radius: 8px; overflow: hidden; }
+.seg-group input { position: absolute; opacity: 0; pointer-events: none; }
+.seg-group label { margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0;
+  min-height: 48px; padding: 7px 4px 6px; cursor: pointer; font-family: var(--display); font-weight: 400; font-size: 16px; border-left: 2px solid var(--ink);
+  -webkit-tap-highlight-color: transparent; }
+.seg-group label:first-of-type { border-left: 0; }
+.seg-group label small { font-family: var(--body); font-weight: 600; font-size: 14px; color: var(--muted); }
+.seg-group input:checked + label { background: var(--ink); color: #FFFFFF; }
+.seg-group input:checked + label small { color: #CFCDE0; }
+.seg-group input:focus-visible + label { outline: 3px solid var(--violet); outline-offset: -5px; }
+
+.actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 24px; }
+button, .btn {
+  font-family: var(--display); font-size: 17px; letter-spacing: 0.3px; padding: 13px 10px; border-radius: 8px; cursor: pointer;
+  border: 2.5px solid var(--ink); background: var(--ink); color: #FFFFFF; text-decoration: none; text-align: center; display: inline-block;
+}
+button.secondary, .btn.secondary { background: var(--paper); color: var(--ink); }
+@media (hover: hover) {
+  button:hover:not(:disabled), .btn:hover { filter: brightness(1.15); }
+  button.secondary:hover:not(:disabled), .btn.secondary:hover { background: var(--violet-bg); filter: none; }
+}
+button:disabled { opacity: 0.55; cursor: progress; }
+button:focus-visible, .btn:focus-visible, input:focus-visible { outline: 3px solid var(--violet); outline-offset: 2px; }
+
+.status { min-height: 26px; margin: 16px 0 0; font-weight: 600; color: var(--ink-2); }
+.status.error { color: var(--red); }
+
+/* ---- the sheet column ----------------------------------------------------------------------------------- */
+.sheet { position: sticky; top: 24px; }
+.page { aspect-ratio: 11 / 8.5; width: 100%; background: var(--paper); border: 3px solid var(--ink); border-radius: 12px; overflow: hidden; position: relative; }
+.page iframe { width: 100%; height: 100%; border: 0; display: block; }
+.page a.preview { display: block; width: 100%; height: 100%; }
+.page a.preview img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.page a.preview:focus-visible { outline: 3px solid var(--violet); outline-offset: -6px; }
+.empty { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; padding: 24px; }
+.empty p { margin: 0; color: var(--muted); font-weight: 600; font-size: 20px; max-width: 30ch; }
+.empty strong { display: block; font-family: var(--display); font-weight: 400; font-size: 26px; color: var(--ink); margin-bottom: 6px; }
+.sheet-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-top: 14px; }
+.sheet-bar .info { flex: 1 1 260px; color: var(--ink-2); font-weight: 600; }
+.sheet-bar .info b { color: var(--ink); }
+.tag { display: inline-block; padding: 0 7px; border: 1.5px solid var(--violet); border-radius: 4px; background: var(--violet-bg); color: var(--violet); font-weight: 700; font-size: 15px; }
+.gold { display: inline-block; padding: 0 8px; border-radius: 9px; background: var(--gold-bg); color: var(--gold); font-weight: 700; font-size: 15px; }
+.sheet-bar .btn { font-size: 15px; padding: 9px 14px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
+[hidden] { display: none !important; }
+
+@media (max-width: 880px) {
+  .wrap { grid-template-columns: 1fr; gap: 24px;
+          padding: max(20px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(40px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left)); }
+  .panel { padding: 22px 18px 24px; }
+  .sheet { position: static; }
+  .sheet-bar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .sheet-bar .info { grid-column: 1 / -1; }
+  .sheet-bar .btn { padding: 10px 6px; font-size: 14px; }
+}
+@media (max-width: 520px) { .sheet-bar { grid-template-columns: 1fr; } }
+@media (max-width: 420px) { .actions { grid-template-columns: 1fr; } }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <section class="panel" aria-labelledby="title">
+    <h1 id="title">One Sheet Wonder</h1>
+    <p class="lede">Print a scenario map or a hero. The same code always prints the same sheet.</p>
+    <p class="rules-link"><a href="/rules.pdf" target="_blank" rel="noopener">Print the rules</a> (2 pages) to learn how to play.</p>
+
+    <div class="code" aria-live="polite">
+      <div class="code-digits" id="code" aria-label="Sheet code"></div>
+      <div class="code-key"><span>version</span><span>level and difficulty</span><span>seed</span><span>check</span></div>
+    </div>
+
+    <form id="form" novalidate>
+      <div class="field">
+        <label for="seed">Seed <span style="font-weight:600;color:var(--muted)">(optional)</span></label>
+        <input id="seed" name="seed" type="text" inputmode="text" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" maxlength="16"
+               placeholder="Leave empty for a random seed" aria-describedby="seed-hint">
+        <p class="hint" id="seed-hint">8 characters like 1a2b-3c4d, or paste a full code to print it again.</p>
+      </div>
+
+      <fieldset class="field" style="border:0;padding:0;margin:0 0 18px">
+        <legend class="field-label">Hero level</legend>
+        <div class="seg-group">
+          <input type="radio" name="level" id="lv-low" value="low" checked><label for="lv-low">Low<small>levels 1-2</small></label>
+          <input type="radio" name="level" id="lv-mid" value="mid"><label for="lv-mid">Mid<small>levels 3-4</small></label>
+          <input type="radio" name="level" id="lv-high" value="high"><label for="lv-high">High<small>levels 5-6</small></label>
+        </div>
+      </fieldset>
+
+      <fieldset class="field" style="border:0;padding:0;margin:0">
+        <legend class="field-label">Difficulty</legend>
+        <div class="seg-group">
+          <input type="radio" name="difficulty" id="df-easy" value="easy"><label for="df-easy">Easy</label>
+          <input type="radio" name="difficulty" id="df-normal" value="normal" checked><label for="df-normal">Normal</label>
+          <input type="radio" name="difficulty" id="df-hard" value="hard"><label for="df-hard">Hard</label>
+        </div>
+      </fieldset>
+
+      <div class="actions">
+        <button type="submit" data-kind="map" id="go-map">Generate map</button>
+        <button type="submit" data-kind="hero" id="go-hero" class="secondary">Generate hero</button>
+      </div>
+      <p class="status" id="status" role="status"></p>
+    </form>
+  </section>
+
+  <section class="sheet" aria-label="Printable sheet">
+    <div class="page" id="page">
+      <div class="empty" id="empty"><p><strong>Your sheet prints here</strong>Generate a map or a hero to see the page, then download it or open it to print.</p></div>
+      <a class="preview" id="preview-link" target="_blank" rel="noopener" hidden><img id="preview" alt=""></a>
+      <iframe id="frame" title="Generated sheet" hidden></iframe>
+    </div>
+    <div class="sheet-bar" id="bar" hidden>
+      <div class="info" id="info"></div>
+      <a class="btn secondary" id="copy" href="#" role="button">Copy code</a>
+      <a class="btn secondary" id="open" target="_blank" rel="noopener">Open to print</a>
+      <a class="btn" id="download">Download PDF</a>
+    </div>
+  </section>
+</main>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const HEX = "0123456789abcdef", LEVELS = ["low", "mid", "high"], DIFFS = ["easy", "normal", "hard"];
+  let version = 1, lastCode = null;
+
+  // Luhn mod 16, matching the generator's check character
+  function check(payload) {
+    let total = 0, factor = 2;
+    for (const ch of payload.split("").reverse()) {
+      const a = factor * HEX.indexOf(ch); total += Math.floor(a / 16) + (a % 16); factor = 3 - factor;
+    }
+    return HEX[(16 - (total % 16)) % 16];
+  }
+  const pick = (name) => document.querySelector(`input[name="${name}"]:checked`).value;
+  const pad2 = (n) => String(n).padStart(2, "0");
+  const dd = () => LEVELS.indexOf(pick("level")) * 3 + DIFFS.indexOf(pick("difficulty")) + 1;
+
+  // What the seed box holds: {seed, version?, level?, difficulty?} or {error}
+  function readSeed() {
+    const raw = $("seed").value.toLowerCase().replace(/[\s-]/g, "");
+    if (!raw) return { seed: null };
+    if (!/^[0-9a-f]+$/.test(raw)) return { error: "Use only 0-9 and a-f." };
+    if (raw.length === 8) return { seed: raw };
+    if (raw.length === 13) {
+      if (check(raw.slice(0, 12)) !== raw[12]) return { error: "That code's last character doesn't match the rest. Check it for a typo." };
+      const d = parseInt(raw.slice(2, 4), 10);
+      if (d < 1 || d > 9) return { error: "That code's level and difficulty digits must be 01-09." };
+      return { seed: raw.slice(4, 12), version: parseInt(raw.slice(0, 2), 10), level: LEVELS[Math.floor((d - 1) / 3)], difficulty: DIFFS[(d - 1) % 3] };
+    }
+    if (raw.length < 8) return { partial: true };
+    return { error: "Enter 8 characters, or a full 13-character code." };
+  }
+
+  function renderCode(seedOverride) {
+    const s = readSeed(), seed = seedOverride || s.seed;
+    const vv = pad2(version), d = pad2(dd());
+    const seedTxt = seed ? `${seed.slice(0, 4)}-${seed.slice(4)}` : "\u2009?\u2009?\u2009?\u2009?-\u2009?\u2009?\u2009?\u2009?";
+    const chk = seed ? check(vv + d + seed) : "?";
+    $("code").innerHTML =
+      `<span class="seg">${vv}${d}</span><span class="dash">-</span>` +
+      `<span class="seg ${seed ? "seed" : "pending"}" id="code-seed">${seedTxt}</span><span class="dash">-</span>` +
+      `<span class="seg ${seed ? "" : "pending"}">${chk}</span>`;
+  }
+
+  $("seed").addEventListener("input", () => {
+    const s = readSeed();
+    $("seed").setAttribute("aria-invalid", s.error ? "true" : "false");
+    if (s.version) { version = s.version; $(`lv-${s.level}`).checked = true; $(`df-${s.difficulty}`).checked = true; }
+    else if (!s.error && !s.partial) version = 1;
+    status(s.error || "", !!s.error); renderCode();
+  });
+  document.querySelectorAll('input[type="radio"]').forEach((r) => r.addEventListener("change", () => renderCode()));
+
+  function status(text, isError) { $("status").textContent = text; $("status").classList.toggle("error", !!isError); }
+
+  // While a sheet generates, the seed digits tumble like dice, then settle on the real code.
+  let tumble = null;
+  function startTumble() {
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    tumble = setInterval(() => {
+      const r = Array.from({ length: 8 }, () => HEX[Math.floor(Math.random() * 16)]).join("");
+      const el = $("code-seed"); if (el) { el.textContent = `${r.slice(0, 4)}-${r.slice(4)}`; el.className = "seg seed"; }
+    }, 70);
+  }
+  function stopTumble() { clearInterval(tumble); tumble = null; }
+
+  $("form").addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    const kind = (ev.submitter && ev.submitter.dataset.kind) || "map";
+    const s = readSeed();
+    if (s.error || s.partial) { status(s.error || "Finish the seed: 8 characters like 1a2b-3c4d.", true); $("seed").focus(); return; }
+    const params = new URLSearchParams({ kind, seed: $("seed").value, level: pick("level"), difficulty: pick("difficulty") });
+    document.querySelectorAll(".actions button").forEach((b) => (b.disabled = true));
+    status(kind === "map" ? "Building the map and rating its difficulty with simulated games\u2026" : "Building the hero\u2026");
+    startTumble();
+    try {
+      const res = await fetch(`/api/generate?${params}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "The sheet couldn't be generated.");
+      stopTumble();
+      const raw = data.code.replace(/-/g, ""); version = parseInt(raw.slice(0, 2), 10);
+      renderCode(raw.slice(4, 12)); lastCode = data.code;
+      showSheet(data, kind);
+      status(kind === "map" ? "Map ready." : "Hero ready.");
+    } catch (e) {
+      stopTumble(); renderCode(); status(e.message, true);
+    } finally {
+      document.querySelectorAll(".actions button").forEach((b) => (b.disabled = false));
+    }
+  });
+
+  function showSheet(d, kind) {
+    const narrow = matchMedia("(max-width: 880px)").matches;
+    $("bar").hidden = false; $("frame").hidden = true; $("preview-link").hidden = true; $("empty").hidden = true;
+    if (d.preview) {
+      $("preview").src = d.preview; $("preview").alt = `Preview of the ${kind} sheet ${d.code}. Opens the PDF.`;
+      $("preview-link").href = d.pdf; $("preview-link").hidden = false;
+    } else if (!narrow) {
+      $("frame").src = `${d.pdf}#view=Fit&toolbar=0`; $("frame").hidden = false;
+    } else {
+      $("empty").hidden = false;
+      $("empty").innerHTML = "<p><strong>Sheet ready</strong>Open it to view and print.</p>";
+    }
+    if (narrow) $("page").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+    $("open").href = d.pdf; $("download").href = `${d.pdf}?download=1`;
+    const lvl = { low: "Low", mid: "Mid", high: "High" }, dif = { easy: "Easy", normal: "Normal", hard: "Hard" };
+    if (kind === "map") {
+      const parts = [];
+      if (d.dmg_add) parts.push(`enemies ${d.dmg_add > 0 ? "+" : "\u2212"}${Math.abs(d.dmg_add)} damage`);
+      if (Math.abs(d.hp_scale - 1) >= 0.005) parts.push(`enemy HP \u00d7${d.hp_scale.toFixed(2)}`);
+      const note = d.band !== "low" ? " Mid and High maps use Low balance until higher-level heroes are designed." : "";
+      $("info").innerHTML = `<b>${dif[d.difficulty]} map</b> for ${lvl[d.band]} heroes: ${parts.join(", ")}.${note}`;
+    } else {
+      const path = d.final ? `${d.branch} \u2192 ${d.final}` : (d.branch || "Warrior");
+      $("info").innerHTML = `<b>${d.cls}</b>, level ${d.level} (${path}).`;
+    }
+  }
+
+  $("copy").addEventListener("click", async (e) => {
+    e.preventDefault(); if (!lastCode) return;
+    try { await navigator.clipboard.writeText(lastCode); status(`Copied ${lastCode}.`); } catch { status(`Code: ${lastCode}`); }
+  });
+
+  renderCode();
+})();
+</script>
+</body>
+</html>

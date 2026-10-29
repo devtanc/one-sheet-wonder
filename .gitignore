@@ -1,0 +1,24 @@
+# Build output
+cs5rs/target/
+/cs5
+__pycache__/
+*.pyc
+
+# Generated attack data (rebuild with: python3 regen_all.py) and caches
+d4/
+cache/
+sheets/
+*.npy
+
+# Generated sheets and study output
+*.pdf
+scen/*_results.json
+check.json
+
+# Environment
+.venv/
+venv/
+.env
+.DS_Store
+.idea/
+.vscode/
